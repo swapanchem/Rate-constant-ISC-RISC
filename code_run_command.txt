@@ -1,13 +1,29 @@
 
-You have to install gfortran and LAPACK/BLAS library for successfully running the code.
+You have to install gfortran, mpi and LAPACK/BLAS library for successfully running the code.
 
-# Run the program using the following command
+Before running the code you should have all the required data and files as described in the input_dso_sv_isc.txt file. According to your system you should have chnage the value of all the required data.
 
-gfortran -o RISC_DSO_T1_S1.exe RISC_DSO_T1_S1.f90 -llapack -lblas   # the -llapack -lblas keywords are sometimes replaced by -lscalapack -lopenblas depending uopn the type of lapack/blas library used
+# Run the intersystem-crossing-rate-constant-dso-sv-interaction-finite-temp.f90 program using the following two commands
 
-# Execute the program using
+gfortran -c determinant_module_complex_SV_ISC.f90
 
-./RISC_DSO_T1_S1.exe
+# For running the code parallelly 
+
+mpif90 -o intersystem-crossing-rate-constant-dso-sv-interaction-finite-temp.exe intersystem-crossing-rate-constant-dso-sv-interaction-finite-temp.f90 determinant_module_complex_SV_ISC.o -llapack -lblas   # in some cases it should be -lscalapack -lopenblas instead of -llapack -lblas
+
+# Execute the program 
+mpirun -n $number ./intersystem-crossing-rate-constant-dso-sv-interaction-finite-temp.exe   # $number should be replaced by the number of processors used 
+
+For serial running you have to change the $number to 1. 
+
+Otherwise you can use the following commnads for serial running  
+
+gfortran -o intersystem-crossing-rate-constant-dso-sv-interaction-finite-temp.exe intersystem-crossing-rate-constant-dso-sv-interaction-finite-temp.f90 determinant_module_complex_SV_ISC.o -llapack -lblas   # in some cases it should be -lscalapack -lopenblas instead of -llapack -lblas
+
+# Execute the program 
+
+./intersystem-crossing-rate-constant-dso-sv-interaction-finite-temp.exe 
 
 # Collect the data
+
 
