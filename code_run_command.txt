@@ -1,7 +1,9 @@
 
 You have to install gfortran, mpi and LAPACK/BLAS library for successfully running the code.
 
-Before running the code you should have all the required data and files as described in the input_dso_sv_isc.txt file. According to your system you should have chnage the value of all the required data.
+Before running the code you should have all the required data and files as described in the input_dso_sv_isc.txt file. 
+According to your system you should have chnage the value of all the required data.
+The all files should be kept in the same folder during the running of the code.
 
 # Run the intersystem-crossing-rate-constant-dso-sv-interaction-finite-temp.f90 program using the following two commands
 
