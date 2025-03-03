@@ -18,16 +18,16 @@ Temperature (T) in Kelvin =
 Damping parameter (ETA) in cm^(-1) =
 100
 
-Energy gap between S1 (lowest excited singlet) and T1 (lowest triplet) in eV = 
+Energy gap between S1 (lowest excited singlet) and TL (lowest triplet) in eV = 
 0.25
 
-Energy gap between S1 (lowest excited singlet) and TN (higher lying triplet) (N could be 2,3,4,....) in eV = 
+Energy gap between S1 (lowest excited singlet) and TH (higher lying triplet) in eV = 
 -0.05
 
-SOC between S1 and T1 in cm^(-1) = 
+SOC between S1 and TL in cm^(-1) = 
 0.02
 
-SOC between S1 and TN (N could be 2,3,4,...) in cm^(-1) = 
+SOC between S1 and TH in cm^(-1) = 
 0.45
 
 Number of processors given 
@@ -39,29 +39,29 @@ Number of processors given
 
 You have to provide the following required files in the same folder where the code is being executed. 
 
-1. J.TXT (Duschinsky rotation (J) matrix between the S1 and the T1 states)
-2. D.TXT (Displacement vector (D) between S1 and T1 states)
+1. J.TXT (Duschinsky rotation (J) matrix between the S1 and the TL states)
+2. D.TXT (Displacement vector (D) between S1 and TL states)
 3. WS1.TXT (Vibrational frequencies of the S1 state)
-4. WT1.TXT (Vibrational frequencies of the T1 state)
-5. NAC.TXT (Mass weighted normal mode specific nonadiabatic coupling vector between the TN and the T1 states)
+4. WTL.TXT (Vibrational frequencies of the TL state)
+5. NAC.TXT (Mass weighted normal mode specific nonadiabatic coupling vector between the TH and the TL states)
 
 #............................For computing the direct spin-orbit induced intersystem crossing rate constant.................................................
 
-For the direct spin-orbit induced intersystem crossing (ISC) rate, the required data and files are N, M1, TMIN, TMAX, TEMP, ETA, DELE-S1-T1, SOC-S1-T1, J.TXT, D.TXT, WS1.TXT and WT1.TXT, respectively.
+For the direct spin-orbit induced intersystem crossing (ISC) rate, the required data and files are N, M1, TMIN, TMAX, TEMP, ETA, DELE-S1-TL, SOC-S1-TL, J.TXT, D.TXT, WS1.TXT and WTL.TXT, respectively.
 
 #............................For the calculation of the spin-vibronic assisted ISC rate constant............................................................
 
-The input data and files are N, M1, TMIN, TMAX, TEMP, ETA, DELE-S1-T1, SOC-S1-T1, DEL-S1-TN, SOC-S1-TN, J.TXT, D.TXT, WS1.TXT, WT1.TXT and NAC.TXT, respectively.
+The input data and files are N, M1, TMIN, TMAX, TEMP, ETA, DELE-S1-TL, SOC-S1-TL, DEL-S1-TH, SOC-S1-TH, J.TXT, D.TXT, WS1.TXT, WTL.TXT and NAC.TXT, respectively.
 
 
 #........................Fast Fourier transformation West (FFTW)........................
 
-The computed time-dependent correlation function can be transformed into the frequency domain (energy domain) by using FFTW and then the rate constant correponding to the DELE-S1-T1 is evaluated.
+The computed time-dependent correlation function can be transformed into the frequency domain (energy domain) by using FFTW and then the rate constant correponding to the DELE-S1-TL is evaluated.
 
 For this FFTW, you can use the FFTW package.
 
 
-The first and second columns of ISC_DSO_CORR.TXT and ISC_SV_CORR.TXT files contain the time and real part of the time-dependent correlation functions in atomic unit, respectively. You have to convert the data into the real unit by multiplying a unit transformation term. 
+The first and second columns of ISC_DSO_CORR.TXT and ISC_SV_CORR.TXT files contain the time and real part of the time-dependent correlation functions in atomic unit, respectively. You have to convert the data into the real unit (rate constant in sec^(-1)) by multiplying a unit transformation factor. 
 
 
 
