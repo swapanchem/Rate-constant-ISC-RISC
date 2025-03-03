@@ -29,3 +29,5 @@ gfortran -o intersystem-crossing-rate-constant-dso-sv-interaction-finite-temp.ex
 # Collect the data
 
 
+
+The same procedure is followed for running other three codes. 
