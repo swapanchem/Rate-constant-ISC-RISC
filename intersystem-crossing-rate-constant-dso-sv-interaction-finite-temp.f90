@@ -1,10 +1,8 @@
-      
-
        PROGRAM ISC_DSO_SV_FINITE_TEMP
 
        USE MPI
 
-       USE DeterminantModuleSVISC  ! IMPORT THE MODULE FOR THE CALCULATION OF DETERMINANT
+       USE DeterminantModule_DSO_SV_ISC  ! IMPORT THE MODULE FOR THE CALCULATION OF DETERMINANT
 
        IMPLICIT NONE
 
@@ -32,7 +30,7 @@
        COMPLEX*16,DIMENSION(:,:), ALLOCATABLE :: FT, AKINV_F_TRANS, &
             AKINV_T_G, H_TRANS, V2
 
-       REAL*8 :: TMIN, TMAX, HH, CM_AU, S_AU, T, AMU_AU, CONST1, &
+       REAL*8 :: TMIN, TMAX, HH, CM_AU, S_AU, T, AMU_AU, CONST, &
                  AU_HZ, BETA, KB, KBT, TEMP, EV_AU, PF, AMP, DET_I, &
                  DET_R, NUM1R, NUM2R, NUM1I, NUM2I, NUMR, NUMI, &
                TRACE_GK_INV_REAL, TRACE_GK_INV_IMAG, &
@@ -104,16 +102,16 @@
        READ (30, *) NAM7
        READ ( 30, *) DELE_S1_TH
 
-       READ(30,*)NAM8
-       READ(30,*)SOC_S1_TL
+       READ(30,*) NAM8
+       READ(30,*) SOC_S1_TL
 
-       READ(30,*)NAM9
-       READ(30,*)SOC_S1_TH
+       READ(30,*) NAM9
+       READ(30,*) SOC_S1_TH
 
-       READ(30,*)NAM10
-       READ(30,*)NP
+       READ(30,*) NAM10
+       READ(30,*) NP
 
-       READ(30,*)NAM11
+       READ(30,*) NAM11
 
        N1 = 2 * N
 
@@ -132,7 +130,7 @@
 
      OPEN (77, FILE = 'WS1.TXT')  ! frequencies of the S1 state (initial state)
 
-     OPEN (88, FILE = 'WT1.TXT')  ! frequencies of the T1 state (final state)
+     OPEN (88, FILE = 'WTL.TXT')  ! frequencies of the TL state (final state)
 
      OPEN (99, FILE = 'D.TXT')    ! displacement vector
 
@@ -188,18 +186,21 @@
 
        BETA = (1.0D0 / KBT) 
 
-!DELE= ENERGY GAP BETWEEN THE INVOVED ELECTRONIC STATES
 
        !ENERGY GAP BETWEEN S1 AND LOWEST LYING TRIPLET (TL)
+
        DELE_S1_TL=DELE_S1_TL*EV_AU
 
        !ENERGY GAP BETWEEN S1 AND HIGHER LYING TRIPLET (TH)
+
        DELE_S1_TH=DELE_S1_TH*EV_AU
 
        !SOC FOR S1-TL
+
        SOC_S1_TL=SOC_S1_TL*CM_AU
 
        !SOC FOR S1-TH
+
        SOC_S1_TH=SOC_S1_TH*CM_AU    
 
 !NAC =SQUARE OF THE NONADIABATIC COUPLING PARAMETER FOR T2-T1 IN ATOMIC UNIT 
@@ -342,7 +343,7 @@
        ENDDO
 
 
-       CONST1 = (SOC_S1_TL * SOC_S1_TL)
+       CONST = (SOC_S1_TL * SOC_S1_TL)   ! SQUARE OF THE SOC
        
 
 !........................................................................................................................................................\\
@@ -438,31 +439,37 @@
       ALLOCATE ( AS2(N,N), BS2(N,N), X1(N,N), X2(N,N), X3(N,N),  &
                X4(N,N), A(N,N), B(N,N), B_INV(N,N) )
 
-      CALL ZGEMM('N','N',N,N,N,(1.0D0,0.0D0),OMEGAS_COMPLEX,N,AS,N, &
-                (0.0D0,0.0D0),AS2,N)
+      CALL ZGEMM('N','N',N, N, N, (1.0D0, 0.0D0), OMEGAS_COMPLEX, &
+                N, AS, N, (0.0D0, 0.0D0), AS2, N)
 
-      CALL ZGEMM('N','N',N,N,N,(1.0D0,0.0D0),OMEGAS_COMPLEX,N,BS,N, &
-                (0.0D0,0.0D0),BS2,N)
 
-      CALL ZGEMM('N','N',N,N,N,(1.0D0,0.0D0),RJT_COMPLEX,N,AS2,N, &
-                (0.0D0,0.0D0),X1,N)
+      CALL ZGEMM('N','N',N, N, N, (1.0D0, 0.0D0), OMEGAS_COMPLEX, &
+                N, BS, N, (0.0D0, 0.0D0), BS2, N)
 
-      CALL ZGEMM('N','N',N,N,N,(1.0D0,0.0D0),X1,N,RJ_COMPLEX,N, &
-                (0.0D0,0.0D0),X2,N)
 
-      CALL ZGEMM('N','N',N,N,N,(1.0D0,0.0D0),RJT_COMPLEX,N,BS2,N, &
-             (0.0D0,0.0D0),X3,N)
+      CALL ZGEMM('N','N',N, N, N, (1.0D0, 0.0D0), RJT_COMPLEX, &
+                N, AS2, N, (0.0D0, 0.0D0), X1, N)
 
-      CALL ZGEMM('N','N',N,N,N,(1.0D0,0.0D0),X3,N,RJ_COMPLEX,N, &
-                (0.0D0,0.0D0),X4,N)
 
-      DO I = 1,N
+      CALL ZGEMM('N','N',N, N, N, (1.0D0, 0.0D0), X1, N, RJ_COMPLEX, &
+                N, (0.0D0, 0.0D0), X2, N)
 
-       DO J = 1,N
 
-        A(I,J) = (AT_COMPLEX(I,J) + X2(I,J))
+      CALL ZGEMM('N','N',N, N, N, (1.0D0, 0.0D0), RJT_COMPLEX, N, &
+                BS2,N, (0.0D0, 0.0D0), X3, N)
 
-        B(I,J) = (BT_COMPLEX(I,J) + X4(I,J))
+
+      CALL ZGEMM('N','N',N, N, N, (1.0D0, 0.0D0), X3, N, RJ_COMPLEX, &
+                N, (0.0D0, 0.0D0), X4, N)
+
+
+      DO I = 1, N
+
+       DO J = 1, N
+
+        A(I, J) = (AT_COMPLEX(I, J) + X2(I, J))
+
+        B(I, J) = (BT_COMPLEX(I, J) + X4(I, J))
 
         ENDDO
 
@@ -470,11 +477,11 @@
       
       !INVERSE OF B 
 
-      DO I = 1,N
+      DO I = 1, N
 
-       DO J = 1,N
+       DO J = 1, N
 
-       B_INV(I,J) = B(I,J)
+       B_INV(I, J) = B(I, J)
 
        ENDDO
 
@@ -482,9 +489,10 @@
 
       ALLOCATE ( IPIV(N1), WORK(N1) )
 
-      CALL ZGETRF(N,N,B_INV,N,IPIV,INFO)
+      CALL ZGETRF( N, N, B_INV, N, IPIV, INFO )
 
-      CALL ZGETRI(N,B_INV,N,IPIV,WORK,N,INFO)
+      CALL ZGETRI( N, B_INV, N, IPIV, WORK, N, INFO )
+
 
 !FORMATION OF THE DENOMINATOR MATRIX WITHIN THE SQUARE ROOT OG THE
 !DETERMINANT WHICH IS DENOTED HERE AS AA
@@ -493,23 +501,28 @@
       ALLOCATE ( AB_INV(N,N), E1(N,N), E2(N,N), B2(N,N), AA(N,N), &
               AA_INV(N,N) )
 
-      CALL ZGEMM('N','N',N,N,N,(1.0D0,0.0D0),A,N,B_INV,N, &
-              (0.0D0,0.0D0),AB_INV,N)
 
-      CALL ZGEMM('N','N',N,N,N,(1.0D0,0.0D0),AB_INV,N,A,N, &
-              (0.0D0,0.0D0),E1,N)
+      CALL ZGEMM('N','N',N, N, N, (1.0D0, 0.0D0), A, N, B_INV, N, &
+              (0.0D0, 0.0D0), AB_INV, N)
 
-      CALL ZGEMM('N','N',N,N,N,(1.0D0,0.0D0),B,N,E1,N, &
-              (0.0D0,0.0D0),E2,N)
 
-      CALL ZGEMM('N','N',N,N,N,(1.0D0,0.0D0),B,N,B,N, &
-              (0.0D0,0.0D0),B2,N)
+      CALL ZGEMM('N','N',N, N, N, (1.0D0, 0.0D0), AB_INV, N, A, N, &
+              (0.0D0, 0.0D0), E1, N)
 
-      DO I = 1,N
 
-       DO J = 1,N
+      CALL ZGEMM('N','N',N, N, N, (1.0D0, 0.0D0), B, N, E1, N, &
+              (0.0D0, 0.0D0), E2, N)
 
-       AA(I,J) = (B2(I,J) - E2(I,J))
+
+      CALL ZGEMM('N','N',N, N, N, (1.0D0, 0.0D0), B, N, B, N, &
+              (0.0D0, 0.0D0), B2, N)
+
+
+      DO I = 1, N
+
+       DO J = 1, N
+
+       AA(I, J) = (B2(I, J) - E2(I, J))
 
        ENDDO
 
@@ -519,19 +532,19 @@
       !ROOT OF THE DETERMINANT)
 
 
-      DO I = 1,N
+      DO I = 1, N
 
-       DO J = 1,N
+       DO J = 1, N
 
-       AA_INV(I,J) = AA(I,J)
+       AA_INV(I, J) = AA(I, J)
 
        ENDDO
 
       ENDDO
 
-      CALL ZGETRF(N,N,AA_INV,N,IPIV,INFO)
+      CALL ZGETRF( N, N, AA_INV, N, IPIV, INFO )
 
-      CALL ZGETRI(N,AA_INV,N,IPIV,WORK,N,INFO)
+      CALL ZGETRI( N, AA_INV, N, IPIV, WORK, N, INFO )
 
 
       !FORMATION OF K MATRIX
@@ -555,61 +568,66 @@
 
        DO J = 1, N1
 
-        AK_INV(I,J) = AK(I,J)
+        AK_INV(I, J) = AK(I, J)
 
        ENDDO
 
       ENDDO
 
-      CALL ZGETRF(N1,N1,AK_INV,N1,IPIV,INFO)
+      CALL ZGETRF(N1, N1, AK_INV, N1, IPIV, INFO)
 
-      CALL ZGETRI(N1,AK_INV,N1,IPIV,WORK,N1,INFO)
+      CALL ZGETRI(N1, AK_INV, N1, IPIV, WORK, N1, INFO)
 
 
 !XX=NUMERATOR MATRIX WITHIN THE SQUARE ROOT OF THE DETERMINANT
 
       ALLOCATE ( X5(N,N), BB(N,N), BBB(N,N), BBB_COPY(N,N))
 
-      CALL ZGEMM('N','N',N,N,N,(1.0D0,0.0D0),AT_COMPLEX,N,AS2,N, &
-                (0.0D0,0.0D0),X5,N)
+
+      CALL ZGEMM('N','N',N, N, N, (1.0D0, 0.0D0), AT_COMPLEX, N, &
+                AS2, N, (0.0D0, 0.0D0), X5, N)
+
    
 
       !FORMATION OF THE COMPLETE DETERMINANT DENOTED BY BB
 
-      CALL ZGEMM('N','N',N,N,N,(1.0D0,0.0D0),X5,N,AA_INV,N, &
-              (0.0D0,0.0D0),BB,N)
 
-      CALL ZGEMM('N','N',N,N,N,(1.0D0,0.0D0),BB,N,P2_COMPLEX,N, &
-              (0.0D0,0.0D0),BBB,N)
+      CALL ZGEMM('N','N',N, N, N, (1.0D0, 0.0D0), X5, N, AA_INV, N, &
+              (0.0D0, 0.0D0), BB, N)
+
+
+      CALL ZGEMM('N','N',N, N, N, (1.0D0, 0.0D0), BB, N, P2_COMPLEX, &
+                 N, (0.0D0, 0.0D0), BBB, N)
 
       DO I = 1, N
 
          DO J = 1, N
 
-         BBB_COPY (I,J)  = BBB(I,J)
+         BBB_COPY (I, J)  = BBB(I, J)
 
          ENDDO
 
       ENDDO
+
 !DETERMINANAT OF BB WHICH IS N BY N MATRIX
      
       CALL DETERMINANT(N, BBB_COPY, DET)
 
 !AMPLITUDE AND PHASE OF THE DETERMINANT 
 
-      AMP = ABS(DET)
+      AMP = ABS( DET )
 
-      AMP = SQRT(AMP)
+      AMP = SQRT( AMP )
 
-      DET_I = AIMAG(DET)
+      DET_I = AIMAG( DET )
 
-      DET_R = REAL(DET)
+      DET_R = REAL( DET )
 
       THETA = DET_I / DET_R
 
       THETA = THETA / 2.0D0
       
-      !WRITE(139,*) T, DET 
+      
 
 !........................................................................................................................................................
 
@@ -622,11 +640,11 @@
       ALLOCATE (E(N,N), Y1(N,N), V1(N,1), F(N1,1), FT(1,N1), &
                V2(1,N1), NUM1(1,1), V3(1,N), NUM2(1,1) )
 
-      DO I = 1,N
+      DO I = 1, N
 
        DO J = 1, N
 
-       E(I,J) = (BS2(I,J) - AS2(I,J))
+       E(I, J) = (BS2(I, J) - AS2(I, J))
 
        ENDDO
 
@@ -634,47 +652,52 @@
 
       !FORMATION OF F VECTOR AND ITS TRANSPOSE FT CONTAINING 2N ELEMENTS
 
-      CALL ZGEMM('N','N',N,N,N,(1.0D0,0.0D0),RJT_COMPLEX,N,E,N, &
-                (0.0D0,0.0D0),Y1,N)
+      CALL ZGEMM('N','N',N, N, N, (1.0D0, 0.0D0), RJT_COMPLEX, N, E, &
+                 N, (0.0D0, 0.0D0), Y1, N)
 
-      CALL ZGEMM('N','N',N,1,N,(1.0D0,0.0D0),Y1,N,D_COMPLEX,N, &
-                (0.0D0,0.0D0),V1,N)
+
+      CALL ZGEMM('N','N',N, 1, N, (1.0D0, 0.0D0), Y1, N, D_COMPLEX, N, &
+                (0.0D0, 0.0D0), V1, N)
 
        
-
       
       F(1 : N, 1 ) = V1(:,1)
       F(N + 1 : N1, 1 ) = V1(:,1) 
 
       DO I = 1, N1
 
-       FT(1,I) = F(I,1)
+       FT(1, I) = F(I, 1)
 
       ENDDO
      
 !MATRIX MULTIPLICATION FOR THE EXPONENTIAL PART
       
-      CALL ZGEMM('N','N',1,N1,N1,(1.0D0,0.0D0),FT,1,AK_INV,N1, &
-              (0.0D0,0.0D0),V2,1)
 
-      CALL ZGEMM('N','N',1,1,N1,(1.0D0,0.0D0),V2,1,F,N1, &
-              (0.0D0,0.0D0),NUM1,1)
+      CALL ZGEMM('N','N',1,N1, N1, (1.0D0, 0.0D0), FT, 1, AK_INV, N1, &
+              (0.0D0, 0.0D0), V2, 1)
+
+
+      CALL ZGEMM('N','N',1, 1, N1, (1.0D0, 0.0D0), V2, 1, F, N1, &
+              (0.0D0, 0.0D0), NUM1,1)
+
 
       
-      CALL ZGEMM('N','N',1,N,N,(1.0D0,0.0D0),DT_COMPLEX,1,E,N, &
-                (0.0D0,0.0D0),V3,1)
-
-      CALL ZGEMM('N','N',1,1,N,(1.0D0,0.0D0),V3,1,D_COMPLEX,N, &
-            (0.0D0,0.0D0),NUM2,1)
+      CALL ZGEMM('N','N',1, N, N, (1.0D0, 0.0D0), DT_COMPLEX, 1, E, N, &
+                (0.0D0, 0.0D0), V3, 1)
 
 
-      NUM1R = REAL(NUM1(1,1)) / 2.0D0
+      CALL ZGEMM('N','N',1, 1, N, (1.0D0, 0.0D0), V3, 1, D_COMPLEX, N, &
+            (0.0D0, 0.0D0), NUM2, 1)
 
-      NUM1I = AIMAG(NUM1(1,1)) / 2.0D0
 
-      NUM2R = REAL(NUM2(1,1))
 
-      NUM2I = AIMAG(NUM2(1,1))
+      NUM1R = REAL(NUM1(1, 1)) / 2.0D0
+
+      NUM1I = AIMAG(NUM1(1, 1)) / 2.0D0
+
+      NUM2R = REAL(NUM2(1, 1))
+
+      NUM2I = AIMAG(NUM2(1, 1))
 
       NUMI = - NUM1R + NUM2R + THETA + (T * DELE_S1_TL)
 
@@ -689,7 +712,7 @@
 
        T1 = ABS(T)
 
-       ISC_DSO1 = CONST1 * AMP * EXP(NUM) * EXP( - T1 * ETA)
+       ISC_DSO1 = CONST * AMP * EXP(NUM) * EXP( - T1 * ETA)
 
 
        WRITE(119,*) T, REAL(ISC_DSO1)
@@ -711,35 +734,35 @@
 
        DO K = NP1, N, NP
 
-       DO M = 1,N
+       DO M = 1, N
 
             ALLOCATE(G11(N, N), G12(N, N), G21(N, N), G22(N, N))
 
             ALLOCATE( H1(N,1), H2(N,1))
 
-             DO I = 1,N
+             DO I = 1, N
 
-               DO J = 1,N
+               DO J = 1, N
 
                 IF (I.EQ.K) THEN
 
-                G11(I,J) = - BT_COMPLEX(K,K) * X2(M,J)
+                G11(I, J) = - BT_COMPLEX(K, K) * X2(M, J)
 
-                G12(I,J) = BT_COMPLEX(K,K) * X4(M,J)
+                G12(I, J) = BT_COMPLEX(K, K) * X4(M, J)
 
-                G21(I,J) = AT_COMPLEX(K,K) * X2(M,J)
+                G21(I, J) = AT_COMPLEX(K, K) * X2(M, J)
 
-                G22(I,J) = - AT_COMPLEX(K,K) * X4(M,J)
+                G22(I, J) = - AT_COMPLEX(K, K) * X4(M, J)
 
                 ELSE
 
-                G11(I,J) = (0.0D0,0.0D0)
+                G11(I, J) = (0.0D0, 0.0D0)
 
-                G12(I,J) = (0.0D0,0.0D0)
+                G12(I, J) = (0.0D0, 0.0D0)
 
-                G21(I,J) = (0.0D0,0.0D0)
+                G21(I, J) = (0.0D0, 0.0D0)
 
-                G22(I,J) = (0.0D0,0.0D0)
+                G22(I, J) = (0.0D0, 0.0D0)
 
                 ENDIF
 
@@ -747,15 +770,15 @@
 
                IF (I.EQ.K) THEN
 
-               H1(I,1) = BT_COMPLEX(K,K) * V1(M,1)
+               H1(I, 1) = BT_COMPLEX(K, K) * V1(M, 1)
 
-               H2(I,1) = - AT_COMPLEX(K,K)*V1(M,1)
+               H2(I, 1) = - AT_COMPLEX(K, K)*V1(M, 1)
 
                ELSE
 
-               H1(I,1) = (0.0D0,0.0D0)
+               H1(I, 1) = (0.0D0, 0.0D0)
 
-               H2(I,1)=(0.0D0,0.0D0)
+               H2(I, 1)=(0.0D0, 0.0D0)
 
                ENDIF
 
@@ -788,7 +811,7 @@
 
          DO I = 1, N1
 
-           H_TRANS(1,I) = H(I,1)
+           H_TRANS(1, I) = H(I, 1)
 
         ENDDO
 
@@ -797,45 +820,49 @@
         !THIS IS FOR THE Tr(GK^(-1))+ [(K^(-1)F)^(T)G(K^(-1)F)]-H^(T)K^(-1)F
 
 
-     CALL ZGEMM('N1','N1',N1,N1,N1,(1.0D0,0.0D0),G,N1,AK_INV,N1, &
-              (0.0D0,0.0D0),GK_INV,N1)
-
-      CALL ZGEMM('N1','N1',N1,1,N1,(1.0D0,0.0D0),AK_INV,N1,F,N1, &
-              (0.0D0,0.0D0),AKINV_F,N1)
+     CALL ZGEMM('N','N',N1, N1, N1, (1.0D0, 0.0D0), G, N1, AK_INV, &
+                N1, (0.0D0, 0.0D0), GK_INV, N1)
 
 
-      DO I = 1,N1
+      CALL ZGEMM('N','N', N1, 1, N1, (1.0D0, 0.0D0), AK_INV, N1, F, &
+                N1, (0.0D0, 0.0D0), AKINV_F, N1)
 
-       AKINV_F_TRANS(1,I) = AKINV_F(I,1)   !TRANSPOSE OF AKINV_F i.e. K^(-1)F
+
+
+      DO I = 1, N1
+
+       AKINV_F_TRANS(1, I) = AKINV_F(I, 1)   !TRANSPOSE OF AKINV_F i.e. K^(-1)F
 
       ENDDO
 
 
-      CALL ZGEMM('N1','N1',1,N1,N1,(1.0D0,0.0D0),AKINV_F_TRANS,1,G,N1, &
-              (0.0D0,0.0D0),AKINV_T_G,1)
-
-      CALL ZGEMM('N1','N1',1,1,N1,(1.0D0,0.0D0),AKINV_T_G,1,AKINV_F, &
-              N1,(0.0D0,0.0D0),NUM3,1)
-
-      CALL ZGEMM('N1','N1',1,1,N1,(1.0D0,0.0D0),H_TRANS,1,AKINV_F,N1, &
-              (0.0D0,0.0D0),NUM4,1)
+      CALL ZGEMM('N','N', 1, N1, N1, (1.0D0, 0.0D0), AKINV_F_TRANS, &
+                1, G, N1, (0.0D0, 0.0D0), AKINV_T_G, 1)
 
 
+      CALL ZGEMM('N','N', 1, 1, N1, (1.0D0, 0.0D0), AKINV_T_G, 1, &
+                AKINV_F, N1, (0.0D0, 0.0D0), NUM3, 1)
 
-      TRACE_GK_INV = (0.0D0,0.0D0)
+
+      CALL ZGEMM('N','N', 1, 1, N1, (1.0D0, 0.0D0), H_TRANS, 1, &
+                AKINV_F, N1, (0.0D0, 0.0D0), NUM4, 1)
 
 
-      DO I = 1,N1
 
-        DO J = 1,N1
+      TRACE_GK_INV = (0.0D0, 0.0D0)
+
+
+      DO I = 1, N1
+
+        DO J = 1, N1
 
         IF (I.EQ.J) THEN
 
-        TRACE_GK_INV = TRACE_GK_INV + (GK_INV(I,J))
+        TRACE_GK_INV = TRACE_GK_INV + (GK_INV(I, J))
 
         ELSE
 
-        TRACE_GK_INV = TRACE_GK_INV + (0.0D0,0.0D0)
+        TRACE_GK_INV = TRACE_GK_INV + (0.0D0, 0.0D0)
 
         ENDIF
 
@@ -843,15 +870,15 @@
 
       ENDDO
 
-      TRACE_GK_INV_REAL = REAL(TRACE_GK_INV)
+      TRACE_GK_INV_REAL = REAL( TRACE_GK_INV )
 
-      TRACE_GK_INV_IMAG = AIMAG(TRACE_GK_INV) 
+      TRACE_GK_INV_IMAG = AIMAG( TRACE_GK_INV ) 
 
       TRACE = COMPLEX( - TRACE_GK_INV_IMAG, TRACE_GK_INV_REAL)
 
       !TOTAL SPIN-VIBRONIC PART 
 
-      SV = SV + ((TRACE + NUM3(1,1) - NUM4(1,1)) * TKK_COMPLEX(K,M))
+      SV = SV + ((TRACE + NUM3(1, 1) - NUM4(1, 1)) * TKK_COMPLEX(K, M))
 
      ! DEALLOCATE TEMORARY MATRICES
 
@@ -869,15 +896,15 @@
 
 
 
-      CALL MPI_BARRIER(MPI_COMM_WORLD,IERROR)
+      CALL MPI_BARRIER(MPI_COMM_WORLD, IERROR)
       
 !CALLING ALL LOOP ITERATIONS RESULTS INTO THE MASTER ID I.E. NP=0 BY
 !CALLING THE MPI_GATHER FUNCTION
 
-       ALLOCATE ( SV1(NP))
+       ALLOCATE ( SV1(NP) )
 
-       CALL MPI_GATHER(SV,1,MPI_DOUBLE_COMPLEX, SV1 ,1 , &
-       MPI_DOUBLE_COMPLEX,0,MPI_COMM_WORLD, IERROR)
+       CALL MPI_GATHER(SV, 1, MPI_DOUBLE_COMPLEX, SV1, 1, &
+       MPI_DOUBLE_COMPLEX, 0, MPI_COMM_WORLD, IERROR)
      
  
 
@@ -885,16 +912,16 @@
 
       IF (MYID == 0) THEN
 
-      DO I = 1,NP
+      DO I = 1, NP
 
-      SV2 = SV2 + SV1(I)
+      SV2 = SV2 + SV1( I )
 
       ENDDO
 
-      ISC_SV1 = SV2 * AMP * EXP(NUM) * EXP( - T1 * ETA)
+      ISC_SV1 = SV2 * AMP * EXP( NUM ) * EXP( - T1 * ETA )
 
 
-      WRITE(129,*) T, REAL(ISC_SV1)
+      WRITE(129,*) T, REAL( ISC_SV1 )
 
       ENDIF
 
@@ -923,7 +950,7 @@
 
 
 
-      DEALLOCATE(SV1)
+      DEALLOCATE( SV1 )
 
 
       ENDDO         !END LOOP FOR T
@@ -943,7 +970,7 @@
 
 !DESTRUCTION OF THE MPI 
 
-       CALL MPI_FINALIZE(IERROR)
+       CALL MPI_FINALIZE( IERROR )
 
        END PROGRAM ISC_DSO_SV_FINITE_TEMP
 
